@@ -38,6 +38,59 @@ function onTouchMoveSnake(event) {
 document.addEventListener('touchstart', onTouchMoveSnake);
 document.addEventListener('touchmove', onTouchMoveSnake);
 
+// Create the particle system
+const particleCount = 100;
+const particles = new THREE.BufferGeometry();
+const particlePositions = new Float32Array(particleCount * 3);
+const particleSizes = new Float32Array(particleCount);
+
+
+for (let i = 0; i < particleCount; i++) {
+  particlePositions.set([0, 0, 0], i * 3);
+  particleSizes[i] = Math.random() * 5 + 2;
+}
+
+particles.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+particles.setAttribute('size', new THREE.BufferAttribute(particleSizes, 1));
+
+
+// Particle material
+const particleMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    time: { value: 0 },
+    color: { value: new THREE.Color(0xffffff) },
+    particleTexture: { value: new THREE.TextureLoader().load('textures/particle.png') },
+  },
+  vertexShader: `
+    uniform float time;
+    attribute float size;
+    varying vec3 vColor;
+    void main() {
+      vColor = vec3(1.0, 0.0, 0.0);
+      vec3 newPosition = position;
+      newPosition.x += sin(position.y * 0.6 + time) * 0.9;
+      newPosition.z += cos(position.y * 0.6 + time) * 0.9;
+      vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0);
+      gl_PointSize = size * (10.0 / -mvPosition.z);
+      gl_Position = projectionMatrix * mvPosition;
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 color;
+    uniform sampler2D particleTexture;
+    varying vec3 vColor;
+    void main() {
+      gl_FragColor = vec4(color * vColor, 1.0) * texture2D(particleTexture, gl_PointCoord);
+    }
+  `,
+  transparent: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+});
+
+
+const particleSystem = new THREE.Points(particles, particleMaterial);
+
 function createScoreText(score) {
   const scoreTextGeometry = new THREE.TextGeometry(`Score: ${score}`, {
     font: font,
@@ -242,8 +295,10 @@ function updateSnake() {
     scoreText = createScoreText(snake.body.length);
     scoreText.position.set(-0.95, -0.45, 0);
     scene.add(scoreText);
+    
   }
-
+  
+  scene.add(particleSystem);
   // Update the snake body opacity
   for (let i = 0; i < snake.body.length; i++) {
     const [x, y] = snake.body[i];
@@ -306,10 +361,10 @@ function createGameOverText() {
 const scene = new THREE.Scene();
 const aspectRatio = window.innerWidth / window.innerHeight;
 const camera = new THREE.OrthographicCamera(-1 * aspectRatio, 1 * aspectRatio, 1, -1, 0.1, 1000);
-
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+
 
 // Create the cube
 const width = 2.0;
@@ -398,6 +453,8 @@ scene.add(skyPlane);
 // Render the scene
 function animate() {
   requestAnimationFrame(animate);
+
+
   // Update time uniform for the snake head material
   if (snake.body.length > 0) {
     const [headX, headY] = snake.body[0];
@@ -405,6 +462,16 @@ function animate() {
     if (headCube.material.uniforms) {
       headCube.material.uniforms.time.value += 0.01;
     }
+    if (particleSystem) {
+      particleMaterial.uniforms.time.value += 0.05;
+      if (snake.cubes) {
+        if (snake.cubes.length > 0) {
+          const headCubePosition = snake.cubes[0].position;
+          particleSystem.position.copy(headCubePosition);
+        }
+      }
+    }
+
   }
   updateSnake(); // Update the snake position.  If you disable this you get your clear grid back
   renderer.render(scene, camera);
