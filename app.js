@@ -22,7 +22,12 @@ function createScoreText(score) {
     height: 0.01,
   });
 
-  const scoreTextMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  // Center the text geometry based on its bounding box
+  scoreTextGeometry.computeBoundingBox();
+  const textWidth = scoreTextGeometry.boundingBox.max.x - scoreTextGeometry.boundingBox.min.x;
+  scoreTextGeometry.translate(-textWidth / 2, 0, 0);
+
+  const scoreTextMaterial = new THREE.MeshStandardMaterial({ color: 0xff8800 });
   const scoreTextMesh = new THREE.Mesh(scoreTextGeometry, scoreTextMaterial);
 
   return scoreTextMesh;
@@ -36,6 +41,19 @@ class Snake {
     this.body = [[15, 15]];
     this.direction = 'right';
     this.grow = 0;
+  }
+
+  checkCollision() {
+    const [headX, headY] = this.body[0];
+
+    for (let i = 1; i < this.body.length; i++) {
+      const [bodyX, bodyY] = this.body[i];
+      if (headX === bodyX && headY === bodyY) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   move() {
@@ -117,13 +135,19 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
+let gameOverText;
+let gameOver = false;
+
 // Update snake position
 function updateSnake() {
+  if (!gameOver) {
   // Clear previous snake body
   snake.body.forEach(([x, y]) => {
     cubes[x][y].material.opacity = 0.07;
     //console.log(cubes);
   });
+
+
 
   // Move the snake
   snake.move();
@@ -143,7 +167,43 @@ function updateSnake() {
     scoreText = createScoreText(snake.body.length);
     scoreText.position.set(-0.95, -0.45, 0);
     scene.add(scoreText);
+  }
+  // Check if the snake touches its tail
+  if (snake.checkCollision()) {
+    const [collisionX, collisionY] = snake.body[0];
+    const collisionCube = cubes[collisionX][collisionY];
+    collisionCube.material.opacity = 1.00;
+    collisionCube.material.color.set(0xff0000); // Set the collision cube color to red
+
+    if (!gameOverText) {
+      gameOverText = createGameOverText();
+      scene.add(gameOverText);
+    }
+    gameOver = true; // Set the game over state
+    // return; // Pause the game
+    
+    
+  }
   
+}
+
+function createGameOverText() {
+  const gameOverTextGeometry = new THREE.TextGeometry('Game Over', {
+    font: font,
+    size: 0.2,
+    height: 0.01,
+  });
+
+  // Center the text geometry based on its bounding box
+  gameOverTextGeometry.computeBoundingBox();
+  const textWidth = gameOverTextGeometry.boundingBox.max.x - gameOverTextGeometry.boundingBox.min.x;
+  gameOverTextGeometry.translate(-textWidth / 2, 0, 0);
+
+  const gameOverTextMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+  const gameOverTextMesh = new THREE.Mesh(gameOverTextGeometry, gameOverTextMaterial);
+  gameOverTextMesh.position.set(0, 0.3, 0);
+
+  return gameOverTextMesh;
 }
 
 
@@ -162,7 +222,7 @@ const width = 2.0;
 const height = 0.01;
 const depth = 2.0;
 const geometry = new THREE.BoxGeometry(width, height, depth);
-const material = new THREE.MeshLambertMaterial({ color: 0x808080 });
+const material = new THREE.MeshLambertMaterial({ color: 0x808080, transparent: false, opacity: 1.00 });
 const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);
 
@@ -261,9 +321,6 @@ const fontLoader = new THREE.FontLoader();
 console.log(fontLoader);
 fontLoader.load('fonts/helvetiker_regular.typeface.json', (loadedFont) => {
   font = loadedFont;
-  scoreText = createScoreText(snake.body.length);
-  scoreText.position.set(-0.95, -0.45, 0);
-  scene.add(scoreText);
   init();
 });
 
