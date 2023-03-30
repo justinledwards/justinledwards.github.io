@@ -233,7 +233,7 @@ function spawnFood() {
 
   // Create a white cube as food
   const foodGeometry = new THREE.BoxGeometry(cubeSize - gap, 0.1 - gap, 2.0 / gridSize - gap);
-  const foodMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  const foodMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00 });
   const food = new THREE.Mesh(foodGeometry, foodMaterial);
   food.position.x = -0.75 + x * cubeSize + cubeSize / 2;
   food.position.y = 0.05;
@@ -284,6 +284,7 @@ function updateSnake() {
   snake.body.forEach(([x, y]) => {
     cubes[x][y].material.opacity = 1.00;
   });
+
   // Check if the snake eats the food
   if (snake.body[0][0] === foodX && snake.body[0][1] === foodY) {
     snake.grow += 3; // Increase grow counter
@@ -313,8 +314,18 @@ function updateSnake() {
         prevHeadCube.material = new THREE.MeshStandardMaterial({ color: 0x0000ff, transparent: true, opacity: 0.07 });
       }
     } else {
+      // const tailCube = snake.cubes[i];
+      const colorFactor = (i + 1) / (snake.body.length + 1);
+      const blueValue = 0.5 + colorFactor * 0.5;
+      if (!snake.checkCollision()) {
+        cube.material.color.setRGB(0, 0, blueValue);
+      }
       cube.material.opacity = gameOver ? 1 : 0.99; // Keep the snake body opaque when the game is over
     }
+
+
+      
+  
   }
   // Check if the snake touches its tail
   if (snake.checkCollision()) {
@@ -414,6 +425,10 @@ const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(-1, 2, 1);
 scene.add(light);
 
+const clock = new THREE.Clock();
+let elapsedTime = 0;
+let snakeSpeed = 30;
+
 // Load sky texture
 // const skyboxLoader = new THREE.CubeTextureLoader();
 // const skyboxTexture = skyboxLoader.load([
@@ -453,6 +468,7 @@ scene.add(skyPlane);
 // Render the scene
 function animate() {
   requestAnimationFrame(animate);
+  elapsedTime += clock.getDelta() * 1000;
 
 
   // Update time uniform for the snake head material
@@ -473,7 +489,11 @@ function animate() {
     }
 
   }
-  updateSnake(); // Update the snake position.  If you disable this you get your clear grid back
+  snakeSpeed = 25; // Set the speed of the snake
+  if (elapsedTime >= snakeSpeed) {
+    updateSnake(); // Update the snake position.  If you disable this you get your clear grid back
+    elapsedTime = 0;
+  }
   renderer.render(scene, camera);
 
 }
