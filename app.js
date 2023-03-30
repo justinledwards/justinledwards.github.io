@@ -17,6 +17,7 @@ function init() {
 
 function onTouchMoveSnake(event) {
   if (event.touches.length !== 1) return;
+  event.stopPropagation(); // Add this line to prevent the default behavior
 
   const touch = event.touches[0];
   const width = window.innerWidth;
@@ -411,6 +412,10 @@ function animate() {
 }
 
 const controls = new OrbitControls(camera, renderer.domElement);
+document.getElementById('toggleCameraLock').addEventListener('click', () => {
+  controls.enabled = !controls.enabled;
+});
+
 controls.target.copy(scene.position);
 controls.update();
 

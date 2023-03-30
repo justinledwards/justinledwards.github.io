@@ -6,9 +6,19 @@
   <style>
     body { margin: 0; }
     canvas { display: block; }
+    #toggleCameraLock {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1;
+      font-size: 18px; /* Increase font size */
+      padding: 8px 12px; /* Add padding */
+      border-radius: 4px; /* Add rounded corners */
+    }
   </style>
 </head>
 <body>
+  <button id="toggleCameraLock">Camera Lock</button>
 
   <script type="module" src="app.js"></script>
 </body>
