@@ -15,6 +15,28 @@ function init() {
   [foodX, foodY, food] = spawnFood();
 }
 
+function onTouchMoveSnake(event) {
+  if (event.touches.length !== 1) return;
+
+  const touch = event.touches[0];
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const currentDirection = snake.direction;
+
+  if (touch.clientY < height / 3 && currentDirection !== 'down' && currentDirection !== 'up') {
+    snake.direction = 'up';
+  } else if (touch.clientY > (2 * height) / 3 && currentDirection !== 'up' && currentDirection !== 'down') {
+    snake.direction = 'down';
+  } else if (touch.clientX < width / 3 && currentDirection !== 'right' && currentDirection !== 'left') {
+    snake.direction = 'left';
+  } else if (touch.clientX > (2 * width) / 3 && currentDirection !== 'left' && currentDirection !== 'right') {
+    snake.direction = 'right';
+  }
+}
+
+document.addEventListener('touchstart', onTouchMoveSnake);
+document.addEventListener('touchmove', onTouchMoveSnake);
+
 function createScoreText(score) {
   const scoreTextGeometry = new THREE.TextGeometry(`Score: ${score}`, {
     font: font,

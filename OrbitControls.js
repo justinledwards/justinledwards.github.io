@@ -1052,6 +1052,7 @@ class OrbitControls extends EventDispatcher {
 		}
 
 		function onTouchStart( event ) {
+			if (event.touches.length !== 2) return; // Update here
 
 			trackPointer( event );
 
@@ -1136,6 +1137,7 @@ class OrbitControls extends EventDispatcher {
 		}
 
 		function onTouchMove( event ) {
+			if (event.touches.length !== 2) return; // Update here
 
 			trackPointer( event );
 
