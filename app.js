@@ -33,6 +33,57 @@ function createScoreText(score) {
   return scoreTextMesh;
 }
 
+// Vertex shader
+const rainbowVertexShader = `
+  varying vec2 vUv;
+
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+// Fragment shader
+const rainbowFragmentShader = `
+  uniform float time;
+  varying vec2 vUv;
+
+  vec3 rgb2hsv(vec3 c) {
+    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+    float d = q.x - min(q.w, q.y);
+    float e = 1.0e-10;
+    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+  }
+
+  vec3 hsv2rgb(vec3 c) {
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+  }
+
+  void main() {
+    float hue = mod(vUv.y * 10.0 + time * 0.5, 1.0);
+    vec3 color = hsv2rgb(vec3(hue, 1.0, 1.0));
+    gl_FragColor = vec4(color, 1.0);
+  }
+`;
+
+function createSnakeHeadMaterial() {
+  return new THREE.ShaderMaterial({
+    vertexShader: rainbowVertexShader,
+    fragmentShader: rainbowFragmentShader,
+    uniforms: {
+      time: { value: 0.0 },
+    },
+  });
+}
+
+function createRedMaterial() {
+  return new THREE.MeshStandardMaterial({ color: 0xff0000});
+}
 
 
 // Define Snake class
@@ -119,32 +170,33 @@ function spawnFood() {
 
 // Handle keyboard input
 document.addEventListener('keydown', (event) => {
-  switch (event.key) {
-    case 'ArrowUp':
-      snake.direction = 'up';
-      break;
-    case 'ArrowDown':
-      snake.direction = 'down';
-      break;
-    case 'ArrowLeft':
-      snake.direction = 'left';
-      break;
-    case 'ArrowRight':
-      snake.direction = 'right';
-      break;
+  const { key } = event;
+  const currentDirection = snake.direction;
+
+  if (key === 'ArrowUp' && currentDirection !== 'down' && currentDirection !== 'up') {
+    snake.direction = 'up';
+  } else if (key === 'ArrowDown' && currentDirection !== 'up' && currentDirection !== 'down') {
+    snake.direction = 'down';
+  } else if (key === 'ArrowLeft' && currentDirection !== 'right' && currentDirection !== 'left') {
+    snake.direction = 'left';
+  } else if (key === 'ArrowRight' && currentDirection !== 'left' && currentDirection !== 'right') {
+    snake.direction = 'right';
   }
 });
 
 let gameOverText;
 let gameOver = false;
+let previousHead;
 
 // Update snake position
 function updateSnake() {
+  if (snake.body.length > 0) {
+    previousHead = [...snake.body[0]];
+  }
   if (!gameOver) {
   // Clear previous snake body
   snake.body.forEach(([x, y]) => {
     cubes[x][y].material.opacity = 0.07;
-    //console.log(cubes);
   });
 
 
@@ -168,11 +220,30 @@ function updateSnake() {
     scoreText.position.set(-0.95, -0.45, 0);
     scene.add(scoreText);
   }
+
+  // Update the snake body opacity
+  for (let i = 0; i < snake.body.length; i++) {
+    const [x, y] = snake.body[i];
+    const cube = cubes[x][y];
+    if (i === 0) {
+      cube.material = createSnakeHeadMaterial(); // Set the custom material for the snake head
+      
+      // Set the material of the previous head cube back to the transparent blue material
+      if (previousHead) {
+        const [prevHeadX, prevHeadY] = previousHead;
+        const prevHeadCube = cubes[prevHeadX][prevHeadY];
+        prevHeadCube.material = new THREE.MeshStandardMaterial({ color: 0x0000ff, transparent: true, opacity: 0.07 });
+      }
+    } else {
+      cube.material.opacity = gameOver ? 1 : 0.99; // Keep the snake body opaque when the game is over
+    }
+  }
   // Check if the snake touches its tail
   if (snake.checkCollision()) {
     const [collisionX, collisionY] = snake.body[0];
     const collisionCube = cubes[collisionX][collisionY];
-    collisionCube.material.opacity = 1.00;
+    collisionCube.material = createRedMaterial();
+    // collisionCube.material.opacity = 0.90;
     collisionCube.material.color.set(0xff0000); // Set the collision cube color to red
 
     if (!gameOverText) {
@@ -304,9 +375,17 @@ scene.add(skyPlane);
 // Render the scene
 function animate() {
   requestAnimationFrame(animate);
+  // Update time uniform for the snake head material
+  if (snake.body.length > 0) {
+    const [headX, headY] = snake.body[0];
+    const headCube = cubes[headX][headY];
+    if (headCube.material.uniforms) {
+      headCube.material.uniforms.time.value += 0.01;
+    }
+  }
   updateSnake(); // Update the snake position.  If you disable this you get your clear grid back
   renderer.render(scene, camera);
-  // console.log(snake.body);
+
 }
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -318,7 +397,6 @@ let font;
 let scoreText;
 
 const fontLoader = new THREE.FontLoader();
-console.log(fontLoader);
 fontLoader.load('fonts/helvetiker_regular.typeface.json', (loadedFont) => {
   font = loadedFont;
   init();
