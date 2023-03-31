@@ -186,7 +186,6 @@ class Snake {
     }
 
     // allow a key buffer length of 2
-    console.log(this.keys);
     if (this.keys.length < 2) {
       if (this.keys.length === 0) {
         if (elapsedTime > snakeSpeed) {
@@ -209,7 +208,7 @@ class Snake {
   }
 
   checkCollision() {
-    
+    // every once in a while it collides with itself in the reverse direction even though there is an elapsed time check on the direction change
     const [headX, headY] = this.body[0];
 
     for (let i = 1; i < this.body.length; i++) {
