@@ -211,7 +211,7 @@ class Snake {
     // every once in a while it collides with itself in the reverse direction even though there is an elapsed time check on the direction change
     const [headX, headY] = this.body[0];
 
-    for (let i = 2; i < this.body.length; i++) {
+    for (let i = 3; i < this.body.length; i++) {
       const [bodyX, bodyY] = this.body[i];
       if (headX === bodyX && headY === bodyY) {
         return true;
