@@ -25,13 +25,13 @@ function onTouchMoveSnake(event) {
   const currentDirection = snake.direction;
 
   if (touch.clientY < height / 3 && currentDirection !== 'down' && currentDirection !== 'up') {
-    snake.direction = 'up';
+    snake.changeDirection('up');
   } else if (touch.clientY > (2 * height) / 3 && currentDirection !== 'up' && currentDirection !== 'down') {
-    snake.direction = 'down';
+    snake.changeDirection('down');
   } else if (touch.clientX < width / 3 && currentDirection !== 'right' && currentDirection !== 'left') {
-    snake.direction = 'left';
+    snake.changeDirection('left');
   } else if (touch.clientX > (2 * width) / 3 && currentDirection !== 'left' && currentDirection !== 'right') {
-    snake.direction = 'right';
+    snake.changeDirection('right');
   }
 }
 
@@ -168,9 +168,48 @@ class Snake {
     this.body = [[15, 15]];
     this.direction = 'right';
     this.grow = 0;
+    // make a buffer for key presses
+    this.keys = [];
+  }
+
+  // make changeDirection the only place that can change direction
+  changeDirection(newDirection) {
+
+    if (newDirection === 'up' && this.direction !== 'down' && this.direction !== 'up') {
+      this.direction = 'up';
+    } else if (newDirection === 'down' && this.direction !== 'up' && this.direction !== 'down') {
+      this.direction = 'down';
+    } else if (newDirection === 'left' && this.direction !== 'right' && this.direction !== 'left') {
+      this.direction = 'left';
+    } else if (newDirection === 'right' && this.direction !== 'left' && this.direction !== 'right') {
+      this.direction = 'right';
+    }
+
+    // allow a key buffer length of 2
+    console.log(this.keys);
+    if (this.keys.length < 2) {
+      if (this.keys.length === 0) {
+        if (elapsedTime > snakeSpeed) {
+          this.direction(newDirection);
+          return;
+        } else {
+          this.keys.push(newDirection);
+        }
+      } else {
+        if (elapsedTime > snakeSpeed) { 
+          if (this.direction === newDirection) {
+            if (this.keys.length > 1) {
+              this.direction(this.keys.shift());
+            } 
+          }
+        }
+        this.keys.push(newDirection);
+      }
+    }
   }
 
   checkCollision() {
+    
     const [headX, headY] = this.body[0];
 
     for (let i = 1; i < this.body.length; i++) {
@@ -185,7 +224,6 @@ class Snake {
 
   move() {
     const head = this.body[0].slice(); // Get the current head position
-
     switch (this.direction) {
       case 'up':
         head[1]--;
@@ -250,13 +288,13 @@ document.addEventListener('keydown', (event) => {
   const currentDirection = snake.direction;
 
   if (key === 'ArrowUp' && currentDirection !== 'down' && currentDirection !== 'up') {
-    snake.direction = 'up';
+    snake.changeDirection('up');
   } else if (key === 'ArrowDown' && currentDirection !== 'up' && currentDirection !== 'down') {
-    snake.direction = 'down';
+    snake.changeDirection('down');
   } else if (key === 'ArrowLeft' && currentDirection !== 'right' && currentDirection !== 'left') {
-    snake.direction = 'left';
+    snake.changeDirection('left');
   } else if (key === 'ArrowRight' && currentDirection !== 'left' && currentDirection !== 'right') {
-    snake.direction = 'right';
+    snake.changeDirection('right');
   }
 });
 
