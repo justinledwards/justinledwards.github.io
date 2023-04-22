@@ -286,13 +286,13 @@ document.addEventListener('keydown', (event) => {
   const { key } = event;
   const currentDirection = snake.direction;
 
-  if (key === 'ArrowUp' && currentDirection !== 'down' && currentDirection !== 'up') {
+  if ((key === 'ArrowUp' || key === 'w') && currentDirection !== 'down' && currentDirection !== 'up') {
     snake.changeDirection('up');
-  } else if (key === 'ArrowDown' && currentDirection !== 'up' && currentDirection !== 'down') {
+  } else if ((key === 'ArrowDown' || key === 's') && currentDirection !== 'up' && currentDirection !== 'down') {
     snake.changeDirection('down');
-  } else if (key === 'ArrowLeft' && currentDirection !== 'right' && currentDirection !== 'left') {
+  } else if ((key === 'ArrowLeft' || key === 'a') && currentDirection !== 'right' && currentDirection !== 'left') {
     snake.changeDirection('left');
-  } else if (key === 'ArrowRight' && currentDirection !== 'left' && currentDirection !== 'right') {
+  } else if ((key === 'ArrowRight' || key === 'd') && currentDirection !== 'left' && currentDirection !== 'right') {
     snake.changeDirection('right');
   }
 });
